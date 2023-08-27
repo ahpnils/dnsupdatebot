@@ -30,15 +30,20 @@ die() {
 
 # Explains how the script works
 usage() {
-  # to be implemented later.
-	:
+  echo 2>&1 "Usage: $(basename "${0}") [options...]
+  -h show this help.
+  -c config file location (optional - defaults to /etc/dnsupdatebotrc)
+  -n dry run. Does not actually update DNS record.
+  -4 IPv4 only.
+  -6 IPv6 only.
+"
 }
 
 # Checks presence of mandatory software
 check_binaries() {
   for binary in "$@"; do
-	  type "$binary" > /dev/null 2>&1 || die "$binary : binary missing"
-	done
+    type "$binary" > /dev/null 2>&1 || die "$binary : binary missing"
+  done
 }
 
 # Main function. Will be splitted in multiple ones later.
@@ -92,4 +97,4 @@ fi
 check_binaries curl dig nsupdate
 main
 
-# vim:ts=2:sw=2
+# vim:ts=8:sw=2:expandtab
