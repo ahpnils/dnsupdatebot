@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# dnsupdatebot configuration file
+# You should copy this file in /etc/dnsupdatebotrc and modify the default values
+# as they will certain not apply to your setup !
+
+ip_check_service="https://ottertelecom.com/ip"
+key_file="/etc/ddns.key"
+dns_server="dnsserver.example.org"
+fqdn="dyn-host.example.com"
+dns_server="80.67.169.40" # ns1.fdn.org
+ttl="180"
+# If you need some options other than --silent or --location
+curl_extra_opts=""
+# vim:ts=8:sw=2:expandtab

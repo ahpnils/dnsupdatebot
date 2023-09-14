@@ -13,10 +13,8 @@ set -o pipefail
 ############
 # Variables
 conf_file="/etc/dnsupdatebotrc"
-curl_opts="-s"
-ip_check_service="https://ottertelecom.com/ip"
-keyfile="/etc/ddns.key"
-dns_server="dnsserver.example.org"
+# we follow HTTP 3XX redirects with curl
+curl_opts="--silent --location"
 
 ############
 # Functions
@@ -37,6 +35,7 @@ usage() {
   -4 IPv4 only.
   -6 IPv6 only.
 "
+  exit 1
 }
 
 # Checks presence of mandatory software
@@ -46,23 +45,37 @@ check_binaries() {
   done
 }
 
-# Main function. Will be splitted in multiple ones later.
-main() {
-current_ip=$(curl ${curl_opts} ${ip_check_service})
-# 80.67.169.40 is ns1.fdn.org
-current_reverse=$(dig +short @80.67.169.40 -x ${current_ip})
-previous_cname=$(dig +short +norecurse @dnsserver.example.org dyn-host.example.org)
-#dns_server=$(dig +short -t A dnsserver.example.org)
-        cat > /tmp/majdnscloud.txt << EOF
+get_current_ip() {
+  curl ${curl_opts} ${curl_extra_opts} ${ip_check_service} || die "Cannot get current IP address. Check the remote service URL or the network connection."
+}
+
+# Update the DNS record.
+# Needs :
+# - the current IP address
+# - the zone (domain)
+# - the fqdn to update
+# - the DNS server IP or hostname
+# - the TSIG key file
+
+update_record() {
+  query_file=$(mktemp)
+
+  cat > ${query_file} << EOF
 server ${dns_server}
-zone example.org.
-update delete dyn-host.example.org.
-update add dyn-host.example.org. 180 CNAME ${current_reverse}
+zone ${zone}.
+update delete ${fqdn}.
+update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
 show
 send
 EOF
-        nsupdate -k ${keyfile} -v /tmp/majdnscloud.txt
-        rm -f /tmp/majdnscloud.txt
+
+  nsupdate -k ${key_file} -v ${query_file} || die "DNS record update failed."
+  rm -f ${query_file}
+}
+
+# Main function. Will be completed later.
+main() {
+  echo "Main part of the script should be here."
 }
 
 ############
@@ -95,6 +108,47 @@ fi
 # Main
 
 check_binaries curl dig nsupdate
+
+optstring=":c:hn46"
+while getopts ${optstring} arg; do
+  case "${arg}" in
+    c)
+      echo "Config file ${OPTARG} used."
+      conf_file="${OPTARG}"
+      ;;
+    h)
+      usage
+      ;;
+    n)
+      echo "Dry run not implemented yet."
+      ;;
+    4)
+      echo "IPv4 only not implemented yet."
+      record_type="A"
+      ;;
+    6)
+      echo "IPv6 only not implemented yet."
+      record_type="AAAA"
+      ;;
+    :)
+      die "Option -${OPTARG} requires an argument."
+      ;;
+    ?)
+      echo "Invalid option : -${OPTARG}"
+      usage
+      ;;
+  esac
+done
+
+if [ -r "${conf_file}" ]; then
+  source "${conf_file}"
+else
+  die "CRITICAL : config file not found. Ensure ${conf_file} exist and is readable."
+fi
+
+#get_current_ip > /dev/null && echo "IP address successfully retrieved."
+current_ip=$(get_current_ip)
+echo ${current_ip}
 main
 
 # vim:ts=8:sw=2:expandtab
