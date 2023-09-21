@@ -62,6 +62,7 @@ check_binaries() {
 # More sanity checks
 sanity_checks() {
   if [ -r "${conf_file}" ]; then
+    # shellcheck source=dnsupdatebotrc.example
     source "${conf_file}"
   else
     die "CRITICAL : config file not found. Ensure ${conf_file} exist and is readable."
@@ -83,7 +84,9 @@ sanity_checks() {
 }
 
 get_current_ip() {
-  curl ${curl_opts} ${curl_extra_opts} ${ip_check_service} || die "Cannot get current IP address. Check the remote service URL or the network connection."
+  # We actually want word-splitting for the first two variables...
+  # shellcheck disable=SC2086
+  curl ${curl_opts} ${curl_extra_opts} "${ip_check_service}" || die "Cannot get current IP address. Check the remote service URL or the network connection."
 }
 
 # Update the DNS record.
@@ -97,7 +100,7 @@ get_current_ip() {
 update_record() {
   query_file=$(mktemp)
 
-  cat > ${query_file} << EOF
+  cat > "${query_file}" << EOF
 server ${dns_server}
 zone ${zone}.
 update delete ${fqdn}.
@@ -106,8 +109,8 @@ show
 send
 EOF
 
-  nsupdate -k ${key_file} -v ${query_file} || die "DNS record update failed."
-  rm -f ${query_file}
+  nsupdate -k "${key_file}" -v "${query_file}" || die "DNS record update failed."
+  rm -f "${query_file}"
 }
 
 ############
