@@ -6,8 +6,8 @@
 ip_check_service="https://ottertelecom.com/ip"
 key_file="/etc/ddns.key"
 dns_server="dnsserver.example.org"
+zone="example.com"
 fqdn="dyn-host.example.com"
-dns_server="80.67.169.40" # ns1.fdn.org
 ttl="180"
 # If you need some options other than --silent or --location
 curl_extra_opts=""

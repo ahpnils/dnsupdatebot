@@ -15,6 +15,19 @@ set -o pipefail
 conf_file="/etc/dnsupdatebotrc"
 # we follow HTTP 3XX redirects with curl
 curl_opts="--silent --location"
+# Extra options for curl that can be used in the config file
+curl_extra_opts=""
+# initialize the record type variable with empty value so it's easier to 
+# throw an error if options -4 and -6 are both absent.
+record_type=""
+# initialize empty config file options so it's easier to
+# throw an error if they are not filled.
+ip_check_service=""
+key_file=""
+dns_server=""
+zone=""
+fqdn=""
+ttl=""
 
 ############
 # Functions
@@ -34,6 +47,7 @@ usage() {
   -n dry run. Does not actually update DNS record.
   -4 IPv4 only.
   -6 IPv6 only.
+  You must choose one between -4 and -6.
 "
   exit 1
 }
@@ -42,6 +56,29 @@ usage() {
 check_binaries() {
   for binary in "$@"; do
     type "$binary" > /dev/null 2>&1 || die "$binary : binary missing"
+  done
+}
+
+# More sanity checks
+sanity_checks() {
+  if [ -r "${conf_file}" ]; then
+    source "${conf_file}"
+  else
+    die "CRITICAL : config file not found. Ensure ${conf_file} exist and is readable."
+  fi
+
+  if [ -z "${record_type}" ]; then
+    die "CRITICAL : you have to use option -4 or -6."
+  fi
+
+  if ! [ -r "${key_file}" ]; then
+    die "CRITICAL : TSIG key file not found. Ensure ${key_file} exist and is readable."
+  fi
+
+  for config_opt in ip_check_service dns_server zone fqdn ttl; do
+    if [ -z "${!config_opt}" ]; then
+      die "${config_opt} : unconfigured option. Please add it to ${conf_file} ."
+    fi
   done
 }
 
@@ -71,11 +108,6 @@ EOF
 
   nsupdate -k ${key_file} -v ${query_file} || die "DNS record update failed."
   rm -f ${query_file}
-}
-
-# Main function. Will be completed later.
-main() {
-  echo "Main part of the script should be here."
 }
 
 ############
@@ -123,7 +155,6 @@ while getopts ${optstring} arg; do
       echo "Dry run not implemented yet."
       ;;
     4)
-      echo "IPv4 only not implemented yet."
       record_type="A"
       ;;
     6)
@@ -140,15 +171,8 @@ while getopts ${optstring} arg; do
   esac
 done
 
-if [ -r "${conf_file}" ]; then
-  source "${conf_file}"
-else
-  die "CRITICAL : config file not found. Ensure ${conf_file} exist and is readable."
-fi
-
-#get_current_ip > /dev/null && echo "IP address successfully retrieved."
+sanity_checks
 current_ip=$(get_current_ip)
-echo ${current_ip}
-main
+update_record
 
 # vim:ts=8:sw=2:expandtab
