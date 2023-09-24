@@ -101,7 +101,6 @@ update_record() {
   echo "
   server ${dns_server}
   zone ${zone}.
-  update delete ${fqdn}.
   update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
   show
   send
@@ -156,7 +155,6 @@ while getopts ${optstring} arg; do
       record_type="A"
       ;;
     6)
-      echo "IPv6 only not implemented yet."
       record_type="AAAA"
       ;;
     :)

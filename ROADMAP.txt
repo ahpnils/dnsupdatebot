@@ -1,5 +1,4 @@
 Ideal features and other things to implement :
 
 - dry-run
-- IPv6
 - maybe create a silent/verbose option
