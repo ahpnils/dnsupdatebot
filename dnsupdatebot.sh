@@ -109,7 +109,7 @@ show
 send
 EOF
 
-  nsupdate -k "${key_file}" -v "${query_file}" || die "DNS record update failed."
+  nsupdate -k "${key_file}" -v "${query_file}" > /dev/null || die "DNS record update failed."
   rm -f "${query_file}"
 }
 

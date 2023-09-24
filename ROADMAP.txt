@@ -3,4 +3,4 @@ Ideal features and other things to implement :
 - dry-run
 - IPv6
 - feed STDIN to nsupdate
-- send nsupdate STDOUT to /dev/null (or create a silent/verbose option)
+- maybe create a silent/verbose option
