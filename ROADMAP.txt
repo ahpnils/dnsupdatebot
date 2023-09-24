@@ -2,5 +2,4 @@ Ideal features and other things to implement :
 
 - dry-run
 - IPv6
-- feed STDIN to nsupdate
 - maybe create a silent/verbose option

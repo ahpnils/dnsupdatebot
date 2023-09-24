@@ -98,19 +98,14 @@ get_current_ip() {
 # - the TSIG key file
 
 update_record() {
-  query_file=$(mktemp)
-
-  cat > "${query_file}" << EOF
-server ${dns_server}
-zone ${zone}.
-update delete ${fqdn}.
-update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
-show
-send
-EOF
-
-  nsupdate -k "${key_file}" -v "${query_file}" > /dev/null || die "DNS record update failed."
-  rm -f "${query_file}"
+  echo "
+  server ${dns_server}
+  zone ${zone}.
+  update delete ${fqdn}.
+  update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
+  show
+  send
+  " | nsupdate -k "${key_file}" > /dev/null || die "DNS record update failed."
 }
 
 ############
