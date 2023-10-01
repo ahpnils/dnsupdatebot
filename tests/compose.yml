@@ -1,0 +1,11 @@
+version: '3'
+services:
+  dns-client:
+    image: docker.io/library/alpine
+    volumes:
+      - /home/runner/work/dnsupdatebot/dnsupdatebot:/tmp/dnsupdatebot
+  dns-server:
+    image: docker.io/library/alpine
+    build: .
+    volumes:
+      - /home/runner/work/dnsupdatebot/dnsupdatebot/tests:/tmp/bind
