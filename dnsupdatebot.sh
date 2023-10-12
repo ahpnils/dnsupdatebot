@@ -29,6 +29,7 @@ zone=""
 fqdn=""
 ttl=""
 verbose="false"
+dry_run="false"
 
 ############
 # Functions
@@ -42,14 +43,14 @@ die() {
 
 # Explains how the script works
 usage() {
-  echo 2>&1 "Usage: $(basename "${0}") [options...]
+  echo 2>&1 "Usage: $(basename "${0}") (-4|-6) [options...]
   -h show this help.
-  -c config file location (optional - defaults to /etc/dnsupdatebotrc)
+  -c config file location (optional - defaults to /etc/dnsupdatebotrc).
   -n dry run. Does not actually update DNS record.
-  -4 IPv4 only.
-  -6 IPv6 only.
-  -v verbose mode (optional, default is not verbose).
-  You must choose one between -4 and -6.
+  -4 update IPv4 records.
+  -6 update IPv6 records.
+  -v verbose mode (optional).
+  You must specify -4 or -6, but not both.
 "
   exit 1
 }
@@ -169,7 +170,7 @@ while getopts ${optstring} arg; do
       usage
       ;;
     n)
-      die "Dry run not implemented yet."
+      dry_run="true"
       ;;
     4)
       record_type="A"
@@ -192,12 +193,14 @@ done
 
 sanity_checks
 detected_ip=$(detect_ip)
-if "${verbose}"; then 
+if "${verbose}" || "${dry_run}"; then 
   current_record=$(get_current_record)
   echo "Current DNS entry : ${current_record}"
   echo "Detected IP address : ${detected_ip}"
 fi
 
-update_record
+if ! "${dry_run}"; then
+  update_record
+fi
 
 # vim:ts=8:sw=2:expandtab

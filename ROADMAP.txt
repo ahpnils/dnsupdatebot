@@ -1,4 +1,3 @@
 Ideal features and other things to implement :
 
-- dry-run
 - DOCUMENT THE WHOLE THING !
