@@ -150,7 +150,7 @@ while getopts ${optstring} arg; do
       usage
       ;;
     n)
-      echo "Dry run not implemented yet."
+      die "Dry run not implemented yet."
       ;;
     4)
       record_type="A"
