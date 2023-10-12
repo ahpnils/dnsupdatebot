@@ -88,12 +88,15 @@ sanity_checks() {
   done
 }
 
+# Detect our remote public IP address.
 detect_ip() {
   # We actually want word-splitting for the first two variables...
   # shellcheck disable=SC2086
   curl ${curl_opts} ${curl_extra_opts} "${ip_check_service}" || die "Cannot get current IP address. Check the remote service URL or the network connection."
 }
 
+# Fetch the current IP address from the DNS record,
+# before updating it. Used when verbose mode is enabled.
 get_current_record() {
   # dig will return 0 if NXDOMAIN, but it will return a value > 0 if it cannot
   # reach the DNS server.
@@ -102,7 +105,7 @@ get_current_record() {
 
 # Update the DNS record.
 # Needs :
-# - the current IP address
+# - the detected IP address
 # - the zone (domain)
 # - the fqdn to update
 # - the DNS server IP or hostname
@@ -139,6 +142,8 @@ if [ "${FLOCKER:-}" != "$0" ] ; then
   LOCK_FAIL_CODE=66
   # Not an exec, as we want to check if it failed because of the lock, or for
   # an other reason
+  # the flock command does not seem to have the same options depending on the OS.
+  # Right now, this command seems to be Linux-only.
   env FLOCKER="$0" flock -en -E "$LOCK_FAIL_CODE" "$0" "$0" "$@" || ret="$?"
   if [ "${ret:-}" = "$LOCK_FAIL_CODE" ] ; then
     die "Already running."
