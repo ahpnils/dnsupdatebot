@@ -101,6 +101,7 @@ update_record() {
   echo "
   server ${dns_server}
   zone ${zone}.
+  update delete ${fqdn}. ${record_type}
   update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
   show
   send
