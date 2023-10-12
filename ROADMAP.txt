@@ -1,5 +1,4 @@
 Ideal features and other things to implement :
 
 - dry-run
-- maybe create a silent/verbose option
 - DOCUMENT THE WHOLE THING !

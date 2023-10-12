@@ -28,6 +28,7 @@ dns_server=""
 zone=""
 fqdn=""
 ttl=""
+verbose="false"
 
 ############
 # Functions
@@ -47,6 +48,7 @@ usage() {
   -n dry run. Does not actually update DNS record.
   -4 IPv4 only.
   -6 IPv6 only.
+  -v verbose mode (optional, default is not verbose).
   You must choose one between -4 and -6.
 "
   exit 1
@@ -62,6 +64,9 @@ check_binaries() {
 # More sanity checks
 sanity_checks() {
   if [ -r "${conf_file}" ]; then
+    if "${verbose}"; then 
+      echo "Config file ${conf_file} used."
+    fi
     # shellcheck source=dnsupdatebotrc.example
     source "${conf_file}"
   else
@@ -83,10 +88,16 @@ sanity_checks() {
   done
 }
 
-get_current_ip() {
+detect_ip() {
   # We actually want word-splitting for the first two variables...
   # shellcheck disable=SC2086
   curl ${curl_opts} ${curl_extra_opts} "${ip_check_service}" || die "Cannot get current IP address. Check the remote service URL or the network connection."
+}
+
+get_current_record() {
+  # dig will return 0 if NXDOMAIN, but it will return a value > 0 if it cannot
+  # reach the DNS server.
+  dig +short @"${dns_server}" -t "${record_type}" "${fqdn}" || die "Cannot get current record. Check the remote DNS server or the network connection."
 }
 
 # Update the DNS record.
@@ -98,14 +109,18 @@ get_current_ip() {
 # - the TSIG key file
 
 update_record() {
+  do_show=""
+  if "${verbose}"; then
+    do_show="show"
+  fi
   echo "
   server ${dns_server}
   zone ${zone}.
   update delete ${fqdn}. ${record_type}
-  update add ${fqdn}. ${ttl} ${record_type} ${current_ip}
-  show
+  update add ${fqdn}. ${ttl} ${record_type} ${detected_ip}
+  ${do_show}
   send
-  " | nsupdate -k "${key_file}" > /dev/null || die "DNS record update failed."
+  " | nsupdate -k "${key_file}" || die "DNS record update failed."
 }
 
 ############
@@ -139,11 +154,10 @@ fi
 
 check_binaries curl dig nsupdate
 
-optstring=":c:hn46"
+optstring=":c:hn46v"
 while getopts ${optstring} arg; do
   case "${arg}" in
     c)
-      echo "Config file ${OPTARG} used."
       conf_file="${OPTARG}"
       ;;
     h)
@@ -158,6 +172,9 @@ while getopts ${optstring} arg; do
     6)
       record_type="AAAA"
       ;;
+    v)
+      verbose="true"
+      ;;
     :)
       die "Option -${OPTARG} requires an argument."
       ;;
@@ -169,7 +186,13 @@ while getopts ${optstring} arg; do
 done
 
 sanity_checks
-current_ip=$(get_current_ip)
+detected_ip=$(detect_ip)
+if "${verbose}"; then 
+  current_record=$(get_current_record)
+  echo "Current DNS entry : ${current_record}"
+  echo "Detected IP address : ${detected_ip}"
+fi
+
 update_record
 
 # vim:ts=8:sw=2:expandtab
